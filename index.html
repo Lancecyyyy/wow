@@ -281,3 +281,88 @@
 <script src="script.js"></script>
 </body>
 </html>
+
+
+/**
+ * Code.gs
+ * Google Apps Script Web App for the Water Billing Statement System.
+ *
+ * SETUP:
+ * 1. Open your Google Sheet (the one with the "Water" tab).
+ * 2. Extensions > Apps Script.
+ * 3. Delete whatever is in Code.gs and paste this entire file in its place.
+ * 4. Deploy > New deployment (or Manage deployments if one exists).
+ *    - Type: Web app
+ *    - Execute as: Me
+ *    - Who has access: Anyone
+ * 5. Copy the /exec URL and use that as SCRIPT_URL in script.js.
+ * 6. IMPORTANT: every time you edit this file afterward, you must go to
+ *    Deploy > Manage deployments > pencil (edit) icon > New version > Deploy.
+ *    Saving the script alone does NOT update the live /exec URL.
+ */
+
+// Name of the sheet tab that stores the transactions.
+const SHEET_NAME = "Water";
+
+/**
+ * Handles POST requests sent from script.js when "Generate Bill" is clicked.
+ * Expects a JSON body with: timestamp, name, consumption, customerType,
+ * rate, grossAmount, discount, netTotal.
+ */
+function doPost(e) {
+  var executionLock = LockService.getScriptLock();
+  // Wait up to 10s for other simultaneous submissions to finish first.
+  executionLock.tryLock(10000);
+
+  try {
+    var targetedSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+
+    if (!targetedSheet) {
+      throw new Error('Sheet tab "' + SHEET_NAME + '" was not found.');
+    }
+
+    var unpackedJSONPayload = JSON.parse(e.postData.contents);
+
+    // Basic validation before writing the row.
+    if (!unpackedJSONPayload.name || !unpackedJSONPayload.consumption) {
+      throw new Error("Missing required fields (name or consumption).");
+    }
+
+    // Column order must match row 1 of the sheet exactly:
+    // Timestamp | Customer Name | Water Consumption | Customer Type
+    // | Rate per cu.m | Gross Amount | Discount | Net Total Bill
+    targetedSheet.appendRow([
+      unpackedJSONPayload.timestamp,
+      unpackedJSONPayload.name,
+      unpackedJSONPayload.consumption,
+      unpackedJSONPayload.customerType,
+      unpackedJSONPayload.rate,
+      unpackedJSONPayload.grossAmount,
+      unpackedJSONPayload.discount,
+      unpackedJSONPayload.netTotal
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ result: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (exceptionError) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ result: "error", message: exceptionError.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } finally {
+    executionLock.releaseLock();
+  }
+}
+
+/**
+ * Lets you sanity-check the deployment by visiting the /exec URL directly
+ * in a browser tab. If you see the JSON below, the deployment itself is
+ * live and reachable — any remaining issue is in doPost's logic above.
+ */
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: "Water Billing Web App is running." }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
