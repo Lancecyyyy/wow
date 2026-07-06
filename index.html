@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Billing Statement — Metro Waterworks District</title>
+<meta name="description" content="Automated water billing terminal — computes tariffs by consumption tier, applies customer discounts, and records every transaction.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="ambient" aria-hidden="true"></div>
+
+<div class="wrap">
+
+  <header class="brand">
+    <div class="brand__eyebrow">
+      <span class="brand__dot"></span>
+      Metro Waterworks District · Automated Billing Terminal
+      <span class="brand__clock" id="clock" aria-hidden="true"></span>
+    </div>
+    <h1 class="brand__title">Water Billing<br>Statement</h1>
+    <p class="brand__sub">Enter a reading. The terminal computes the tariff tier, applies the customer discount, and prints the statement below.</p>
+  </header>
+
+  <main class="panel-grid">
+
+    <!-- ============ METER PANEL ============ -->
+    <section class="meter-panel" aria-labelledby="meter-heading">
+      <h2 id="meter-heading" class="visually-hidden">Meter reading and customer details</h2>
+
+      <!-- Tier meter -->
+      <div class="tier-meter">
+        <div class="tier-meter__readout">
+          <span class="tier-meter__value" id="readoutValue">0</span>
+          <span class="tier-meter__unit">m&sup3;</span>
+          <span class="tier-meter__rate" id="readoutRate">Awaiting reading</span>
+        </div>
+
+        <div class="tier-meter__track" id="tierTrack">
+          <div class="tier-meter__fill" id="tierFill"></div>
+          <div class="tier-meter__marker" id="tierMarker"></div>
+          <div class="tier-meter__seg" data-tier="1"></div>
+          <div class="tier-meter__seg" data-tier="2"></div>
+          <div class="tier-meter__seg" data-tier="3"></div>
+          <div class="tier-meter__seg" data-tier="4"></div>
+        </div>
+
+        <div class="tier-meter__labels">
+          <span>1&ndash;20<br><b>&#8369;25</b></span>
+          <span>21&ndash;40<br><b>&#8369;35</b></span>
+          <span>41&ndash;60<br><b>&#8369;45</b></span>
+          <span>60+<br><b>&#8369;60</b></span>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form id="billingForm" class="form" novalidate>
+
+        <div class="field">
+          <label for="customerName">Customer Name</label>
+          <input type="text" id="customerName" name="customerName" placeholder="e.g. Evangeline G. Pamintuan" autocomplete="off">
+          <p class="field__error" id="errName" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="consumption">Water Consumption (m&sup3;)</label>
+          <input type="number" id="consumption" name="consumption" placeholder="e.g. 100" min="0" step="1" inputmode="numeric">
+          <p class="field__error" id="errConsumption" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="customerType">Customer Type</label>
+          <select id="customerType" name="customerType">
+            <option value="regular">Regular — No Discount</option>
+            <option value="senior">Senior Citizen — 25% Discount</option>
+            <option value="solo">Solo Parent — 15% Discount</option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn-generate" id="generateBtn">
+          <span>Generate Bill</span>
+        </button>
+      </form>
+
+      <!-- Odometer counter -->
+      <div class="counter">
+        <span class="counter__label">Transactions Processed</span>
+        <div class="odometer" id="odometer" aria-live="polite" aria-label="0 transactions processed"></div>
+      </div>
+    </section>
+
+    <!-- ============ RECEIPT PANEL ============ -->
+    <section class="receipt-panel" aria-labelledby="receipt-heading">
+      <h2 id="receipt-heading" class="visually-hidden">Billing statement output</h2>
+
+      <div class="receipt" id="receipt">
+        <div class="receipt__hole-strip" aria-hidden="true"></div>
+
+        <div class="receipt__empty" id="receiptEmpty">
+          <svg width="40" height="52" viewBox="0 0 40 52" fill="none" aria-hidden="true">
+            <path d="M20 2C20 2 4 22.5 4 33.5C4 42.6127 11.3873 50 20.5 50C29.6127 50 37 42.6127 37 33.5C37 21.5 20 2 20 2Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/>
+          </svg>
+          <p>No statement generated yet.<br>Fill in the reading and press <b>Generate Bill</b>.</p>
+        </div>
+
+        <pre class="receipt__output" id="receiptOutput" hidden></pre>
+
+        <div class="receipt__foot" id="receiptFoot" hidden>
+          <span id="statusDot" class="status-dot"></span>
+          <span id="statusText">—</span>
+          <span class="receipt__actions">
+            <button type="button" class="receipt__iconbtn" id="copyBtn" title="Copy statement">Copy</button>
+            <button type="button" class="receipt__iconbtn" id="printBtn" title="Print statement">Print</button>
+          </span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="legend">
+    <p><b>Reference</b> — Tariff applies per full statement based on total consumption. Senior Citizens receive 25% off, Solo Parents 15% off the computed amount.</p>
+  </footer>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
