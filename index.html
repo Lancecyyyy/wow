@@ -366,3 +366,79 @@ function doGet(e) {
     .createTextOutput(JSON.stringify({ status: "Water Billing Web App is running." }))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+
+const SHEET_NAME = "Water";
+
+function pick(obj) {
+  for (var i = 1; i < arguments.length; i++) {
+    var key = arguments[i];
+    if (obj[key] !== undefined && obj[key] !== null && obj[key] !== "") {
+      return obj[key];
+    }
+  }
+  return "";
+}
+
+function doPost(e) {
+  var executionLock = LockService.getScriptLock();
+  executionLock.tryLock(10000);
+
+  try {
+    var targetedSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    if (!targetedSheet) {
+      throw new Error('Sheet tab "' + SHEET_NAME + '" was not found.');
+    }
+
+    if (!e || !e.postData || !e.postData.contents) {
+      throw new Error("No POST body received.");
+    }
+
+    var data = JSON.parse(e.postData.contents);
+
+    var timestamp    = pick(data, "timestamp", "date", "time") || new Date().toLocaleString();
+    var name         = pick(data, "name", "customerName", "customer_name");
+    var consumption  = pick(data, "consumption", "waterConsumption", "usage");
+    var customerType = pick(data, "customerType", "type", "customer_type");
+    var rate         = pick(data, "rate", "rateApplied", "ratePerCubicMeter", "rate_per_cum");
+    var grossAmount  = pick(data, "grossAmount", "amount", "gross_amount");
+    var discount     = pick(data, "discount");
+    var netTotal     = pick(data, "netTotal", "total", "net_total");
+
+    if (!name || !consumption) {
+      throw new Error(
+        "Missing name or consumption. Payload keys received: " + Object.keys(data).join(", ")
+      );
+    }
+
+    targetedSheet.appendRow([
+      timestamp,
+      name,
+      consumption,
+      customerType,
+      rate,
+      grossAmount,
+      discount,
+      netTotal
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ result: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (exceptionError) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ result: "error", message: exceptionError.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } finally {
+    executionLock.releaseLock();
+  }
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ status: "Water Billing Web App is running." }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
